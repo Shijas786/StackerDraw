@@ -3,12 +3,6 @@ import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
 const nextConfig = {
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
-    typescript: {
-        ignoreBuildErrors: true,
-    },
     webpack: (config, { isServer }) => {
         if (!isServer) {
             config.resolve.fallback = {
