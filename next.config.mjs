@@ -24,6 +24,7 @@ const nextConfig = {
     typescript: {
         ignoreBuildErrors: true,
     },
+    transpilePackages: ["@stacks/connect", "@stacks/common", "@stacks/transactions", "@stacks/network"],
 };
 
 export default nextConfig;
