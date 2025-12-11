@@ -165,6 +165,47 @@
   )
 )
 
+;; Helper for Clarity 4 timestamp (stub for now)
+(define-read-only (get-time)
+  ;; In Clarity 4: (stacks-block-time)
+  ;; For now locally: just return block-height to allow compilation
+  block-height
+)
+
+;; Refund tickets if lottery expires without winner or not enough participation
+(define-public (refund-ticket (lottery-id uint) (ticket-number uint))
+  (let
+    (
+      (lottery (unwrap! (get-lottery lottery-id) err-lottery-not-found))
+      (ticket-owner (unwrap! (get-ticket-owner lottery-id ticket-number) err-not-winner))
+      (ticket-price (get ticket-price lottery))
+    )
+    ;; Security: Only allow refund if lottery is effectively dead/expired
+    ;; In Clarity 4 we will use (stacks-block-time) to check strict validation deadlines
+    (asserts! (> block-height (+ (get draw-block-height lottery) u100)) err-lottery-not-active) ;; Expired by ~100 blocks
+    (asserts! (is-none (get winner lottery)) err-not-winner) ;; No winner was picked
+    
+    ;; Verify caller owns the ticket (or is admin cleaning up)
+    (asserts! (or (is-eq tx-sender ticket-owner) (is-eq tx-sender (get creator lottery))) err-not-authorized)
+    
+    ;; Refund
+    (try! (as-contract (stx-transfer? ticket-price tx-sender ticket-owner)))
+    
+    ;; Security: Prevent double refunds by removing ticket ownership
+    (map-delete tickets { lottery-id: lottery-id, ticket-number: ticket-number })
+    
+    (print {
+      event: "ticket-refunded",
+      lottery-id: lottery-id,
+      ticket-number: ticket-number,
+      owner: ticket-owner,
+      amount: ticket-price
+    })
+    
+    (ok ticket-price)
+  )
+)
+
 ;; Claim prize
 (define-public (claim-prize (lottery-id uint))
   (let
@@ -175,6 +216,9 @@
     )
     (asserts! (is-eq tx-sender winner) err-not-authorized)
     (asserts! (is-eq (get status lottery) "drawn") err-lottery-not-active)
+    
+    ;; Security: Clarity 4 restrict-assets? would go here to ensure contract 
+    ;; hasn't been drained by re-entrancy (though STX transfer is safe by default)
     
     (try! (as-contract (stx-transfer? prize-pool tx-sender winner)))
     

@@ -1,0 +1,5 @@
+export const CONTRACT_ADDRESS = "ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM";
+export const CONTRACT_NAME = "lottery";
+export const CONTRACT_ID = `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`;
+
+export const RECOMMENDED_EXPLORER_URL = "https://explorer.hiro.so";
